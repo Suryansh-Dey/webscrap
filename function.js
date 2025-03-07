@@ -58,7 +58,7 @@ function getReferencedSites(data, base) {
  * @param {URL} url 
  * @param {import('./scrapSites.js').Options} options 
  * @param {number} [limit=1]
- * @returns {Promise<string[]>} pages
+ * @returns {Promise<Object<string,string>>} pages
  */
 export default async function fetchMarkdown(url, options, limit = 1) {
     const browser = await puppeteer.launch({

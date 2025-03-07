@@ -6,7 +6,7 @@
  * @param {(data:string, originalURL:URL, images:boolean)=> string} dataProcess 
  * @param {(data:string)=>URL[]} getNeighbours 
  * @param {number} limit 
- * @returns {Promise<string[]>} markdownOfPages
+ * @returns {Promise<Object<string,string>>} markdownOfPages
  */
 export async function scrapSites(url, visit, options, dataProcess, getNeighbours, limit) {
     const visited = {}
@@ -32,5 +32,5 @@ export async function scrapSites(url, visit, options, dataProcess, getNeighbours
         }
         await Promise.all(pagePromises)
     }
-    return Object.values(visited)
+    return visited
 }
