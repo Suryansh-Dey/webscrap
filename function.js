@@ -44,10 +44,10 @@ function htmlToMarkdown(html, url, images = true) {
  * @returns {string[]} refferedSites
  */
 function getReferencedSites(data, base) {
-    return data.match(/\bhttps?:\/\/[^\s]+/g)
+    return data.match(/https?:\/\/[^\s\)\]>]+/g)
         .map(url => {
             try {
-                return URL(url, base)
+                return new URL(url, base)
             }
             catch { return null }
         })
@@ -57,10 +57,10 @@ function getReferencedSites(data, base) {
 /**
  * @param {URL} url 
  * @param {import('./scrapSites.js').Options} options 
- * @param {number} [depth=1]
+ * @param {number} [limit=1]
  * @returns {Promise<string[]>} pages
  */
-export default async function fetchMarkdown(url, options, depth = 1) {
+export default async function fetchMarkdown(url, options, limit = 1) {
     const browser = await puppeteer.launch({
         args: chromium.args,
         defaultViewport: chromium.defaultViewport,
@@ -70,10 +70,11 @@ export default async function fetchMarkdown(url, options, depth = 1) {
     const page = await browser.newPage();
 
     try {
-        const pages = await scrapSites(new URL(url), async (url) => {
-            await page.goto(url);
+        const pages = await scrapSites(url, async (url) => {
+            await page.goto(url.href.replace(/#.*/, ''));
+            console.log("Visited: ", url.href)
             return await page.evaluate(() => document.documentElement.querySelector("body").innerHTML);
-        }, options, htmlToMarkdown, getReferencedSites, depth)
+        }, options, htmlToMarkdown, getReferencedSites, limit)
         return pages
     } finally {
         await page.close();
