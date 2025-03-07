@@ -41,13 +41,15 @@ function htmlToMarkdown(html, url, images = true) {
 }
 /**
  * @param {string} data
- * @returns {string[]} refferedSites
+ * @returns {URL[]} refferedSites
  */
 function getReferencedSites(data, base) {
     return data.match(/https?:\/\/[^\s\)\]>]+/g)
         .map(url => {
             try {
-                return new URL(url, base)
+                const processURL = new URL(url, base)
+                if (processURL.pathname.includes('.')) return null
+                else return processURL
             }
             catch { return null }
         })
@@ -67,17 +69,18 @@ export default async function fetchMarkdown(url, options, limit = 1) {
         executablePath: await chromium.executablePath(),
         headless: chromium.headless,
     });
-    const page = await browser.newPage();
 
     try {
         const pages = await scrapSites(url, async (url) => {
+            const page = await browser.newPage();
             await page.goto(url.href.replace(/#.*/, ''));
             console.log("Visited: ", url.href)
-            return await page.evaluate(() => document.documentElement.querySelector("body").innerHTML);
+            const html = await page.evaluate(() => document.documentElement.querySelector("body").innerHTML);
+            await page.close();
+            return html
         }, options, htmlToMarkdown, getReferencedSites, limit)
         return pages
     } finally {
-        await page.close();
         await browser.close();
     }
 }
