@@ -1,7 +1,14 @@
+/**
+ * @param {URL} url 
+ * @returns {string}
+ */
+function standardise(url) {
+    return url.href.toLowerCase().replace(/#.*/, '').replaceAll('//', '/')
+}
 /** @typedef {{images:boolean}} Options */
 /**
  * @param {URL} url 
- * @param {(url:URL)=>Promise<string>} visit 
+ * @param {(url:URL)=>Promise<string>|Promise<boolean>} visit 
  * @param {Options} options 
  * @param {(data:string, originalURL:URL, images:boolean)=> string} dataProcess 
  * @param {(data:string)=>URL[]} getNeighbours 
@@ -18,15 +25,19 @@ export async function scrapSites(url, visit, options, dataProcess, getNeighbours
 
     while (queue.length) {
         const childPage = queue.pop()
-        visited[childPage.url.href.replace(/#.*/, '')] = childPage.data
+        visited[standardise(url)] = childPage.data
 
         const pagePromises = []
         for (const neighbour of getNeighbours(childPage.data)) {
-            if (!visited.hasOwnProperty(neighbour.href.replace(/#.*/, '')) && neighbour.origin === url.origin && limit) {
-                pagePromises.push((async () => queue.push({
-                    url: neighbour,
-                    data: dataProcess(await visit(neighbour), url, options.images)
-                }))())
+            if (!visited.hasOwnProperty(standardise(neighbour)) && neighbour.origin === url.origin && limit) {
+                pagePromises.push((async () => {
+                    const html = await visit(neighbour)
+                    if (html)
+                        queue.push({
+                            url: neighbour,
+                            data: dataProcess(html, url, options.images)
+                        })
+                })())
                 limit--
             }
         }

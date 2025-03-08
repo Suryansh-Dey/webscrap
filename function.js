@@ -73,11 +73,18 @@ export default async function fetchMarkdown(url, options, limit = 1) {
     try {
         const pages = await scrapSites(url, async (url) => {
             const page = await browser.newPage();
-            await page.goto(url.href.replace(/#.*/, ''));
-            console.log("Visited: ", url.href)
-            const html = await page.evaluate(() => document.documentElement.querySelector("body").innerHTML);
-            await page.close();
-            return html
+            const response = await page.goto(url.href.replace(/#.*/, ''));
+
+            if (response && response.status() < 300) {
+                console.log("Scrapping: ", url.href)
+                const html = await page.evaluate(() => document.documentElement.querySelector("body").innerHTML);
+
+                page.close();
+                return html
+            }
+
+            page.close();
+            return false
         }, options, htmlToMarkdown, getReferencedSites, limit)
         return pages
     } finally {
