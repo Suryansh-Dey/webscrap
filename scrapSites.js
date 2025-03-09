@@ -25,7 +25,7 @@ export async function scrapSites(url, visit, options, dataProcess, getNeighbours
 
     while (queue.length) {
         const childPage = queue.pop()
-        visited[standardise(url)] = childPage.data
+        visited[standardise(childPage.url)] = childPage.data
 
         const pagePromises = []
         for (const neighbour of getNeighbours(childPage.data)) {
