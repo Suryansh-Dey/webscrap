@@ -3,7 +3,9 @@ import puppeteer from 'puppeteer-core'
 import { scrapSites } from './scrapSites.js';
 import TurndownService from "turndown";
 const turndownService = new TurndownService();
+import { gfm } from 'turndown-plugin-gfm';
 const fetchEndpoint = "https://api.vinaiak.com/fetch/";
+turndownService.use(gfm)
 
 /**
  * @param {string} html
@@ -40,6 +42,15 @@ function htmlToMarkdown(html, url, images = true) {
     return turndownService.turndown(html);
 }
 /**
+ * @param {URL} url 
+ * @returns {boolean}
+ */
+function isPage(url) {
+    const parts = url.pathname.split('.');
+    const extention = parts[parts.length - 1]
+    return extention.includes('/')
+}
+/**
  * @param {string} data
  * @returns {URL[]} refferedSites
  */
@@ -48,7 +59,7 @@ function getReferencedSites(data, base) {
         .map(url => {
             try {
                 const processURL = new URL(url, base)
-                if (processURL.pathname.includes('.')) return null
+                if (isPage(processURL)) return null
                 else return processURL
             }
             catch { return null }
