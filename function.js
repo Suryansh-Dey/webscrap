@@ -16,7 +16,8 @@ turndownService.use(gfm)
 function htmlToMarkdown(html, url, images = true) {
     html = html
         .replace(/<style[^>]*>.*?<\/style>/gis, "")
-        .replace(/<script[^>]*>.*?<\/script>/gis, "");
+        .replace(/<script[^>]*>.*?<\/script>/gis, "")
+        .replace(/style="[^"]*"/gis, "");
     turndownService.addRule("customImage", {
         filter: "img",
         replacement: function(content, node) {
