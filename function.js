@@ -17,7 +17,8 @@ function htmlToMarkdown(html, url, images = true) {
     html = html
         .replace(/<style[^>]*>.*?<\/style>/gis, "")
         .replace(/<script[^>]*>.*?<\/script>/gis, "")
-        .replace(/style="[^"]*"/gis, "");
+        .replace(/style="[^"]*"/gis, "")
+
     turndownService.addRule("customImage", {
         filter: "img",
         replacement: function(content, node) {
@@ -40,7 +41,8 @@ function htmlToMarkdown(html, url, images = true) {
             return `[${content}](${href})`;
         },
     });
-    return turndownService.turndown(html);
+    return turndownService.turndown(html)
+        .replace(/<img[^>]*src="([^"]*)"[^>]*>/gis, (_, rawUrl) => `<img src="${new URL(rawUrl, url)}">`);
 }
 /**
  * @param {URL} url 
