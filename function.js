@@ -50,8 +50,8 @@ function htmlToMarkdown(html, url, images = true) {
  */
 function isPage(url) {
     const parts = url.pathname.split('.');
-    const extention = parts[parts.length - 1]
-    return extention.includes('/')
+    const extention = parts[parts.length - 1].slice(1)
+    return parts.length === 1 || extention.includes('/') || extention === 'htm'
 }
 /**
  * @param {string} data
@@ -62,8 +62,8 @@ function getReferencedSites(data, base) {
         .map(url => {
             try {
                 const processURL = new URL(url, base)
-                if (isPage(processURL)) return null
-                else return processURL
+                if (!isPage(processURL)) return null
+                return processURL
             }
             catch { return null }
         })
