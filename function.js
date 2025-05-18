@@ -87,11 +87,20 @@ export default async function fetchMarkdown(url, options, limit = 1) {
     try {
         const pages = await scrapSites(url, async (url) => {
             const page = await browser.newPage();
-            const response = await page.goto(url.href.replace(/#.*/, ''));
+            await page.setRequestInterception(true);
+            page.on('request', (request) => {
+                if (request.resourceType() === 'image' || request.resourceType() === 'media') {
+                    request.abort()
+                } else {
+                    request.continue()
+                }
+            })
+            const response = await page.goto(url.href.replace(/#.*/, ''),
+                { waitUntil: 'domcontentloaded', timeout: 30000 });
 
             if (response && response.status() < 300) {
                 console.log("Scrapping: ", url.href)
-                const html = await page.evaluate(() => document.documentElement.querySelector("body").innerHTML);
+                const html = await page.evaluate(() => document.body.innerHTML);
 
                 page.close();
                 return html

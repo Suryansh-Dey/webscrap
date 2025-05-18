@@ -31,12 +31,16 @@ export async function scrapSites(url, visit, options, dataProcess, getNeighbours
         for (const neighbour of getNeighbours(childPage.data)) {
             if (!visited.hasOwnProperty(standardise(neighbour)) && neighbour.origin === url.origin && limit) {
                 pagePromises.push((async () => {
-                    const html = await visit(neighbour)
-                    if (html)
-                        queue.push({
-                            url: neighbour,
-                            data: dataProcess(html, url, options.images)
-                        })
+                    try {
+                        const html = await visit(neighbour)
+                        if (html)
+                            queue.push({
+                                url: neighbour,
+                                data: dataProcess(html, url, options.images)
+                            })
+                    } catch (error) {
+                        console.log("failed to scrap", neighbour, ". Error:", error)
+                    }
                 })())
                 limit--
             }
