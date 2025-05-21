@@ -111,6 +111,6 @@ export default async function fetchMarkdown(url, options, limit = 1) {
         }, options, htmlToMarkdown, getReferencedSites, limit)
         return pages
     } finally {
-        await browser.close();
+        browser.process().kill('SIGKILL');
     }
 }
