@@ -1,5 +1,5 @@
 async function askTextName(text) {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${process.env.GEMINI_API_KEY}`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json;charset=UTF-8"
@@ -23,7 +23,8 @@ async function askTextName(text) {
             ]
         })
     })
-    return await response.text()
+    const answer = await response.json()
+    return answer.candidates[0].content.parts[0].text
 }
 /**
  * @param {string[]} topics 
@@ -46,19 +47,21 @@ async function askTopicsName(topics) {
                 {
                     "parts": [
                         {
-                            text
+                            text: topics.join(', ')
                         }
                     ]
                 }
             ]
         })
     })
-    return await response.text()
+    const answer = await response.json()
+    return answer.candidates[0].content.parts[0].text
 }
 /**
+ * Yup, binary tree with JS crap
  *@param {Object.<string, string>} map 
  * */
-function intoTree(map) {
+export function intoTree(map) {
     const tree = {}
     for (const [link, text] of Object.entries(map)) {
         const parts = link.split('/');
@@ -73,32 +76,27 @@ function intoTree(map) {
     }
     return tree
 }
-async function namifyTree(parent, key, tree) {
+export async function namifyTree(parent, key, tree) {
     if (typeof tree === 'string') {
         delete parent[key]
         parent[await askTextName(tree)] = tree
         return
     }
-    if (!parent) {
+    let child_keys = Object.keys(tree)
+    if (!parent || child_keys.length > 1) {
+        let tasks = []
         for (const [key, value] of Object.entries(tree)) {
-            namifyTree(tree, key, value)
+            tasks.push(namifyTree(tree, key, value))
+        }
+        await Promise.all(tasks)
+        if (parent) {
+            delete parent[key]
+            parent[await askTopicsName(Object.keys(tree))] = tree
         }
         return
     }
-    let child_keys = Object.keys(tree)
-    if (child_keys.length === 1) {
-        const value = tree[child_keys[0]]
-        parent[key] = value
-        namifyTree(parent, key, value)
-        return
-    }
-    for (const [key, value] of Object.entries(tree)) {
-        namifyTree(tree, key, value)
-    }
-    delete parent[key]
-    parent[await askTopicsName(Object.keys(tree))] = tree
+    const value = tree[child_keys[0]]
+    parent[key] = value
+    await namifyTree(parent, key, value)
+    return
 }
-const a = intoTree({
-    
-})
-

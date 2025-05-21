@@ -7,6 +7,7 @@ function standardise(url) {
 }
 /** @typedef {{images:boolean}} Options */
 /**
+ * BFS in js
  * @param {URL} url 
  * @param {(url:URL)=>Promise<string>|Promise<boolean>} visit 
  * @param {Options} options 
