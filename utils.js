@@ -8,7 +8,7 @@ async function askTextName(text) {
             "system_instruction": {
                 "parts": [
                     {
-                        "text": "You are given some text. You task is to output an appropriate heading name representing the text. The topic name can be of 3-4 words."
+                        "text": "You are given some text. You task is to output an appropriate heading name representing the text. The topic name can be of 3-4 words. JUST OUTPUT THE TOPIC NAME ONLY."
                     }
                 ]
             },
@@ -24,7 +24,7 @@ async function askTextName(text) {
         })
     })
     const answer = await response.json()
-    return answer.candidates[0].content.parts[0].text
+    return answer.candidates[0].content.parts[0].text.trim()
 }
 /**
  * @param {string[]} topics 
@@ -39,7 +39,10 @@ async function askTopicsName(topics) {
             "system_instruction": {
                 "parts": [
                     {
-                        "text": "You are given some topics. You task is to output an appropriate super topics name, representing them propperly. The topic name can be of 3-4 words."
+                        "text": `You are given some topics. You task is to output an appropriate super topics name, representing them propperly. The topic name can be of 3-4 words. JUST OUTPUT THE TOPIC NAME ONLY.
+Example:
+Input: Bitotsav, Pantheon, Deepotsav
+Output: College fests`
                     }
                 ]
             },
@@ -55,7 +58,7 @@ async function askTopicsName(topics) {
         })
     })
     const answer = await response.json()
-    return answer.candidates[0].content.parts[0].text
+    return answer.candidates[0].content.parts[0].text.trim()
 }
 /**
  * Yup, binary tree with JS crap

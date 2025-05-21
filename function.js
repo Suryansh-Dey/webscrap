@@ -102,15 +102,17 @@ export default async function fetchMarkdown(url, options, limit = 1) {
                 console.log("Scrapping: ", url.href)
                 const html = await page.evaluate(() => document.body.innerHTML);
 
-                page.close();
+                await page.close();
                 return html
             }
 
-            page.close();
+            await page.close();
             return false
         }, options, htmlToMarkdown, getReferencedSites, limit)
         return pages
     } finally {
-        browser.process().kill('SIGKILL');
+        const pages = await browser.pages();
+        await Promise.all(pages.map(page => page.close()));
+        await browser.close();
     }
 }
