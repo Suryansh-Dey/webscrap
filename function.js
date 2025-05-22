@@ -58,16 +58,15 @@ function isPage(url) {
  * @returns {URL[]} refferedSites
  */
 function getReferencedSites(data, baseURL) {
-    return data.match(/https?:\/\/[^\s\)\]>]+/g)
-        .map(url => {
-            try {
-                const processURL = new URL(url, baseURL)
-                if (!isPage(processURL) || processURL.origin !== baseURL.origin) return null
-                return processURL
-            }
-            catch { return null }
-        })
-        .filter(num => num !== null)
+    return data.match(/https?:\/\/[^\s"'<>\)]+/g)?.map(url => {
+        try {
+            const processURL = new URL(url, baseURL)
+            if (!isPage(processURL) || processURL.origin !== baseURL.origin) return null
+            return processURL
+        }
+        catch { return null }
+    })
+        ?.filter(num => num !== null) || []
 }
 
 function sleep(ms) {
