@@ -8,7 +8,7 @@ async function askTextName(text) {
             "system_instruction": {
                 "parts": [
                     {
-                        "text": "You are given some text. You task is to output an appropriate heading name representing the text. The topic name can be of 3-4 words. Avoid too general names like Overview, Info etc. JUST OUTPUT THE TOPIC NAME ONLY."
+                        "text": "You are given contents of an webpage. Your task is to output an appropriate heading name of this page. The topic name can be of 3-4 words. Avoid too general names like Overview, Info etc. JUST OUTPUT THE TOPIC NAME ONLY."
                     }
                 ]
             },
