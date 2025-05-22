@@ -9,7 +9,7 @@ export const handler = awslambda.streamifyResponse(async (event, responseStream,
     event = JSON.parse(event.body) //For function URL
     let pages = await fetchMarkdown(new URL(event.url), { images: event.images }, event.limit);
     if (event.tree) 
-        pages = namify(pages)
+        pages = await namify(pages)
 
     const requestStream = Readable.from(Buffer.from(JSON.stringify(pages)));
     await pipeline(requestStream, responseStream);

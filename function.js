@@ -57,12 +57,12 @@ function isPage(url) {
  * @param {string} data
  * @returns {URL[]} refferedSites
  */
-function getReferencedSites(data, base) {
+function getReferencedSites(data, baseURL) {
     return data.match(/https?:\/\/[^\s\)\]>]+/g)
         .map(url => {
             try {
-                const processURL = new URL(url, base)
-                if (!isPage(processURL)) return null
+                const processURL = new URL(url, baseURL)
+                if (!isPage(processURL) || processURL.origin !== baseURL.origin) return null
                 return processURL
             }
             catch { return null }

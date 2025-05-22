@@ -29,8 +29,8 @@ export async function scrapSites(url, visit, options, dataProcess, getNeighbours
         visited[standardise(childPage.url)] = childPage.data
 
         const pagePromises = []
-        for (const neighbour of getNeighbours(childPage.data)) {
-            if (!visited.hasOwnProperty(standardise(neighbour)) && neighbour.origin === url.origin && limit) {
+        for (const neighbour of getNeighbours(childPage.data, url)) {
+            if (!visited.hasOwnProperty(standardise(neighbour)) && limit) {
                 pagePromises.push((async () => {
                     try {
                         const html = await visit(neighbour)
@@ -40,7 +40,7 @@ export async function scrapSites(url, visit, options, dataProcess, getNeighbours
                                 data: dataProcess(html, url, options.images)
                             })
                     } catch (error) {
-                        console.log("failed to scrap", neighbour, ". Error:", error)
+                        console.log("failed to scrap", neighbour.href, ". Error:", error)
                     }
                 })())
                 limit--
