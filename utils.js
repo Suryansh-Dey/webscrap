@@ -8,7 +8,7 @@ async function askTextName(text) {
             "system_instruction": {
                 "parts": [
                     {
-                        "text": "You are given some text. You task is to output an appropriate heading name representing the text. The topic name can be of 3-4 words. JUST OUTPUT THE TOPIC NAME ONLY."
+                        "text": "You are given some text. You task is to output an appropriate heading name representing the text. The topic name can be of 3-4 words. Avoid too general names like Overview, Info etc. JUST OUTPUT THE TOPIC NAME ONLY."
                     }
                 ]
             },
@@ -83,7 +83,7 @@ export async function namifyTree(parent, key, tree) {
     if (typeof tree === 'string') {
         delete parent[key]
         const name = await askTextName(tree)
-        parent[name] = tree
+        parent[name] = (parent[name] || '') + tree
         console.log("Naming contents of", key, " to ", name)
         return
     }
@@ -96,7 +96,8 @@ export async function namifyTree(parent, key, tree) {
         await Promise.all(tasks)
         if (parent) {
             delete parent[key]
-            parent[await askTopicsName(Object.keys(tree))] = tree
+            const name = await askTopicsName(Object.keys(tree))
+            parent[name] = { ...parent[name], ...tree }
         }
         return
     }
