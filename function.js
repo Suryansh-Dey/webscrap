@@ -100,10 +100,11 @@ export default async function fetchMarkdown(url, options, limit = 1) {
             })
             const response = await page.goto(url.href.replace(/#.*/, ''),
                 { waitUntil: 'domcontentloaded', timeout: 30000 });
-            await sleep(5 * 1000) // Waiting for async js
 
-            if (response && response.status() < 300) {
+            if (response && response.status() < 400 &&
+                response.headers()['content-type'] && response.headers()['content-type'].startsWith('text/html')) {
                 console.log("Scrapping: ", url.href)
+                await sleep(5 * 1000) // Waiting for async js
                 const html = await page.evaluate(() => document.body.innerHTML);
 
                 await page.close();
