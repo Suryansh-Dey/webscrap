@@ -79,7 +79,7 @@ export function intoTree(map) {
     }
     return tree
 }
-export async function namifyTree(parent, key, tree) {
+async function namifyTree(parent, key, tree) {
     if (typeof tree === 'string') {
         delete parent[key]
         const name = await askTextName(tree)
@@ -105,4 +105,15 @@ export async function namifyTree(parent, key, tree) {
     parent[key] = value
     await namifyTree(parent, key, value)
     return
+}
+export async function namify(pages) {
+    const uniquePages = {}
+    let i = 0;
+    for (const [key, value] of Object.entries(pages)) {
+        uniquePages[key + '/' + i++] = value
+    }
+
+    const pageTree = intoTree(uniquePages)
+    await namifyTree(null, null, pageTree)
+    return pageTree
 }
