@@ -70,6 +70,9 @@ function getReferencedSites(data, base) {
         .filter(num => num !== null)
 }
 
+function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms))
+}
 /**
  * @param {URL} url 
  * @param {import('./scrapSites.js').Options} options 
@@ -97,6 +100,7 @@ export default async function fetchMarkdown(url, options, limit = 1) {
             })
             const response = await page.goto(url.href.replace(/#.*/, ''),
                 { waitUntil: 'domcontentloaded', timeout: 30000 });
+            await sleep(5 * 1000) // Waiting for async js
 
             if (response && response.status() < 300) {
                 console.log("Scrapping: ", url.href)
