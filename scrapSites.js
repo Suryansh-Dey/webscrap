@@ -17,7 +17,9 @@ function standardise(url) {
  * @returns {Promise<Object<string,string>>} markdownOfPages
  */
 export async function scrapSites(url, visit, options, dataProcess, getNeighbours, limit) {
+    const visited_pages = {}
     const visited = {}
+    visited[standardise(url)] = true
     const queue = [{
         url,
         data: dataProcess(await visit(url), url, options.images)
@@ -25,12 +27,14 @@ export async function scrapSites(url, visit, options, dataProcess, getNeighbours
     limit--
 
     while (queue.length) {
-        const childPage = queue.pop()
-        visited[standardise(childPage.url)] = childPage.data
+        const childPage = queue.shift()
+        visited_pages[childPage.url] = childPage.data
 
         const pagePromises = []
         for (const neighbour of getNeighbours(childPage.data, url)) {
-            if (!visited.hasOwnProperty(standardise(neighbour)) && limit) {
+            const standard_url = standardise(neighbour)
+            if (!visited[standard_url] && limit) {
+                visited[standard_url] = true
                 pagePromises.push((async () => {
                     try {
                         const html = await visit(neighbour)
@@ -48,5 +52,5 @@ export async function scrapSites(url, visit, options, dataProcess, getNeighbours
         }
         await Promise.all(pagePromises)
     }
-    return visited
+    return visited_pages
 }
