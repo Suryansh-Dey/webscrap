@@ -82,7 +82,9 @@ export function intoTree(map) {
 export async function namifyTree(parent, key, tree) {
     if (typeof tree === 'string') {
         delete parent[key]
-        parent[await askTextName(tree)] = tree
+        const name = await askTextName(tree)
+        parent[name] = tree
+        console.log("Naming contents of", key, " to ", name)
         return
     }
     let child_keys = Object.keys(tree)
