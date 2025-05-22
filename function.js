@@ -86,10 +86,14 @@ export default async function fetchMarkdown(url, options, limit = 1) {
         executablePath: await chromium.executablePath(),
         headless: chromium.headless,
     });
+    let pageCount = 0
 
     try {
         const pages = await scrapSites(url, async (url) => {
+            while (pageCount > 12) await sleep(1000) // Limiting the max number of concurrent pages
+            pageCount++
             const page = await browser.newPage();
+
             await page.setRequestInterception(true);
             page.on('request', (request) => {
                 if (request.resourceType() === 'image' || request.resourceType() === 'media') {
@@ -98,21 +102,19 @@ export default async function fetchMarkdown(url, options, limit = 1) {
                     request.continue()
                 }
             })
-            const response = await page.goto(url.href.replace(/#.*/, ''),
-                { waitUntil: 'domcontentloaded', timeout: 30000 });
+            const response = await page.goto(url.href.replace(/#.*/, ''), { waitUntil: 'domcontentloaded' })
 
+            let data = false;
             if (response && response.status() < 400 &&
                 response.headers()['content-type'] && response.headers()['content-type'].startsWith('text/html')) {
                 console.log("Scrapping: ", url.href)
                 await sleep(5 * 1000) // Waiting for async js
                 const html = await page.evaluate(() => document.body.innerHTML);
-
-                await page.close();
-                return html
+                data = html
             }
-
             await page.close();
-            return false
+            pageCount--
+            return data
         }, options, htmlToMarkdown, getReferencedSites, limit)
         return pages
     } finally {
