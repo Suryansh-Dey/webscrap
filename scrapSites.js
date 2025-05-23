@@ -31,9 +31,9 @@ export async function scrapSites(url, visit, options, dataProcess, getNeighbours
         visited_pages[childPage.url] = childPage.data
 
         const pagePromises = []
-        for (const neighbour of getNeighbours(childPage.data, url)) {
+        for (const neighbour of getNeighbours(childPage.data, childPage.url)) {
             const standard_url = standardise(neighbour)
-            if (!visited[standard_url] && limit) {
+            if (!visited[standard_url] && limit && !standardise(url).startsWith(standard_url)) {
                 visited[standard_url] = true
                 pagePromises.push((async () => {
                     try {
