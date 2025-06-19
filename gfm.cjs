@@ -103,8 +103,7 @@ function isHeadingRow(tr) {
         parentNode.nodeName === 'THEAD' ||
         (
             parentNode.firstChild === tr &&
-            (parentNode.nodeName === 'TABLE' || isFirstTbody(parentNode)) &&
-            every.call(tr.childNodes, function(n) { return n.nodeName === 'TH' })
+            (parentNode.nodeName === 'TABLE' || isFirstTbody(parentNode))
         )
     )
 }

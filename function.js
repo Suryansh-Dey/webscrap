@@ -4,21 +4,9 @@ import { scrapSites } from './scrapSites.js';
 import TurndownService from "turndown";
 const turndownService = new TurndownService();
 import { gfm } from './gfm.cjs';
-import { JSDOM } from 'jsdom'
 const fetchEndpoint = "https://api.vinaiak.com/fetch/";
 turndownService.use(gfm)
 
-function cleanTables(html) {
-    const parser = new JSDOM(html);
-    const dom = parser.window.document;
-    for (const colgroup of dom.querySelectorAll("colgroup")) colgroup.parentNode.removeChild(colgroup)
-    for (const td of dom.querySelectorAll("table tr:first-child td")) {
-        const head = dom.createElement('th')
-        head.innerHTML = td.innerHTML
-        td.parentNode.replaceChild(head, td)
-    }
-    return dom.body.innerHTML
-}
 /**
  * @param {string} html
  * @param {string} url request url.
@@ -29,7 +17,7 @@ function htmlToMarkdown(html, url, images = true) {
     html = html
         .replace(/<style[^>]*>.*?<\/style>/gis, "")
         .replace(/<script[^>]*>.*?<\/script>/gis, "")
-        .replace(/style="[^"]*"/gis, "")
+        .replace(/<colgroup.*?<\/colgroup>/gis, "")
 
     turndownService.addRule("customImage", {
         filter: "img",
@@ -53,7 +41,7 @@ function htmlToMarkdown(html, url, images = true) {
             return `[${content}](${href})`;
         },
     });
-    return turndownService.turndown(cleanTables(html))
+    return turndownService.turndown(html)
         .replace(/<img[^>]*src="([^"]*)"[^>]*>/gis, (_, rawUrl) => `<img src="${new URL(rawUrl, url)}">`);
 }
 /**
