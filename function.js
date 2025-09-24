@@ -4,14 +4,13 @@ import { scrapSites } from './scrapSites.js';
 import TurndownService from "turndown";
 const turndownService = new TurndownService();
 import { gfm } from './gfm.cjs';
-const fetchEndpoint = "https://api.vinaiak.com/fetch/";
 turndownService.use(gfm)
 
 /**
  * @param {string} html
  * @param {string} url request url.
  * @param {boolean} images 
- * @returns {string} markdown
+ * @returns {{markdown:string, references:URL[]}} markdown
  */
 function htmlToMarkdown(html, url, images = true) {
     html = html
@@ -26,23 +25,27 @@ function htmlToMarkdown(html, url, images = true) {
             const alt = node.getAttribute("alt") || "";
             let src = node.getAttribute("src") || "";
 
-            if (src.includes(fetchEndpoint)) return `<img src="${src}" alt="${alt}">`;
-
             src = new URL(src, url).toString();
             return `![${alt}](${src})`;
         },
     });
+    const references = []
     turndownService.addRule("customLink", {
         filter: "a",
         replacement: function(content, node) {
-            let href = node.getAttribute("href") || "";
-            href = new URL(href, url).toString();
+            const href = new URL(node.getAttribute("href"), url);
+            if (isPage(href))
+                references.push(href)
 
             return `[${content}](${href})`;
         },
     });
-    return turndownService.turndown(html)
-        .replace(/<img[^>]*src="([^"]*)"[^>]*>/gis, (_, rawUrl) => `<img src="${new URL(rawUrl, url)}">`);
+
+    return {
+        markdown: turndownService.turndown(html)
+            .replace(/<img[^>]*src="([^"]*)"[^>]*>/gis, (_, rawUrl) => `<img src="${new URL(rawUrl, url)}">`)
+        , references
+    };
 }
 /**
  * @param {URL} url 
@@ -51,22 +54,7 @@ function htmlToMarkdown(html, url, images = true) {
 function isPage(url) {
     const parts = url.pathname.split('.');
     const extention = parts[parts.length - 1].slice(1)
-    return parts.length === 1 || extention.includes('/') || extention === 'htm'
-}
-/**
- * @param {string} data
- * @returns {URL[]} refferedSites
- */
-function getReferencedSites(data, parentURL) {
-    return data.match(/https?:\/\/[^\s"'<>\)]+/g)?.map(url => {
-        try {
-            const processURL = new URL(url, parentURL)
-            if (!isPage(processURL) || processURL.origin !== parentURL.origin) return null
-            return processURL
-        }
-        catch { return null }
-    })
-        ?.filter(num => num !== null) || []
+    return parts.length === 1 || extention.includes('/') || extention === 'html' || extention === 'aspx'
 }
 
 function sleep(ms) {
@@ -114,7 +102,7 @@ export default async function fetchMarkdown(url, options, limit = 1) {
             await page.close();
             pageCount--
             return data
-        }, options, htmlToMarkdown, getReferencedSites, limit)
+        }, options, htmlToMarkdown, limit)
         return pages
     } finally {
         const pages = await browser.pages();
