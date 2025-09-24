@@ -8,7 +8,7 @@ turndownService.use(gfm)
 
 /**
  * @param {string} html
- * @param {string} url request url.
+ * @param {URL} url request url.
  * @param {boolean} images 
  * @returns {{markdown:string, references:URL[]}} markdown
  */
@@ -20,7 +20,7 @@ function htmlToMarkdown(html, url, images = true) {
 
     turndownService.addRule("customImage", {
         filter: "img",
-        replacement: function(content, node) {
+        replacement: function(_, node) {
             if (!images) return ' '
             const alt = node.getAttribute("alt") || "";
             let src = node.getAttribute("src") || "";
@@ -34,7 +34,7 @@ function htmlToMarkdown(html, url, images = true) {
         filter: "a",
         replacement: function(content, node) {
             const href = new URL(node.getAttribute("href"), url);
-            if (isPage(href))
+            if (href.origin === url.origin && isPage(href))
                 references.push(href)
 
             return `[${content}](${href})`;
@@ -53,7 +53,7 @@ function htmlToMarkdown(html, url, images = true) {
  */
 function isPage(url) {
     const parts = url.pathname.split('.');
-    const extention = parts[parts.length - 1].slice(1)
+    const extention = parts[parts.length - 1]
     return parts.length === 1 || extention.includes('/') || extention === 'html' || extention === 'aspx'
 }
 
