@@ -1,63 +1,87 @@
 async function askTextName(text) {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json;charset=UTF-8"
-        },
-        body: JSON.stringify({
-            "system_instruction": {
-                "parts": [
-                    {
-                        "text": "You are given contents of an webpage. Your task is to output an appropriate heading name of this page. The topic name can be of 3-4 words. Avoid too general names like Overview, Info etc. JUST OUTPUT THE TOPIC NAME ONLY."
-                    }
-                ]
+    let retriesRemaining = 3;
+    let answer
+    while (retriesRemaining--) {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json;charset=UTF-8"
             },
-            "contents": [
-                {
+            body: JSON.stringify({
+                "system_instruction": {
                     "parts": [
                         {
-                            text
+                            "text": "You are given contents of an webpage. Your task is to output an appropriate heading name of this page. The topic name can be of 3-4 words. Avoid too general names like Overview, Info etc. JUST OUTPUT THE TOPIC NAME ONLY."
                         }
                     ]
-                }
-            ]
+                },
+                "contents": [
+                    {
+                        "parts": [
+                            {
+                                text
+                            }
+                        ]
+                    }
+                ]
+            })
         })
-    })
-    const answer = await response.json()
+        answer = await response.json()
+        if (!answer.candidates) {
+            if (answer.error.code == 503) {
+                console.log("Gemini overloaded. retriesRemaining:", retriesRemaining)
+            } else
+                throw Error("Gemini Error:" + JSON.stringify(answer))
+        }
+        else break
+    }
+
     return answer.candidates[0].content.parts[0].text.trim()
 }
 /**
  * @param {string[]} topics 
  * */
 async function askTopicsName(topics) {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json;charset=UTF-8"
-        },
-        body: JSON.stringify({
-            "system_instruction": {
-                "parts": [
-                    {
-                        "text": `You are given some topics. You task is to output an appropriate super topics name, representing them propperly. The topic name can be of 3-4 words. JUST OUTPUT THE TOPIC NAME ONLY.
+    let retriesRemaining = 3
+    let answer
+    while (retriesRemaining--) {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json;charset=UTF-8"
+            },
+            body: JSON.stringify({
+                "system_instruction": {
+                    "parts": [
+                        {
+                            "text": `You are given some topics. You task is to output an appropriate super topics name, representing them propperly. The topic name can be of 3-4 words. JUST OUTPUT THE TOPIC NAME ONLY.
 Example:
 Input: Bitotsav, Pantheon, Deepotsav
 Output: College fests`
-                    }
-                ]
-            },
-            "contents": [
-                {
-                    "parts": [
-                        {
-                            text: topics.join(', ')
                         }
                     ]
-                }
-            ]
+                },
+                "contents": [
+                    {
+                        "parts": [
+                            {
+                                text: topics.join(', ')
+                            }
+                        ]
+                    }
+                ]
+            })
         })
-    })
-    const answer = await response.json()
+        answer = await response.json()
+        if (!answer.candidates) {
+            if (answer.error.code == 503) {
+                console.log("Gemini overloaded. retriesRemaining:", retriesRemaining)
+            } else
+                throw Error("Gemini Error:" + JSON.stringify(answer))
+        }
+        else break
+    }
+
     return answer.candidates[0].content.parts[0].text.trim()
 }
 /**
