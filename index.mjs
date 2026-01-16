@@ -6,7 +6,10 @@ const { Readable } = stream;
 const pipeline = util.promisify(stream.pipeline);
 
 export const handler = awslambda.streamifyResponse(async (event, responseStream, _context) => {
-    event = JSON.parse(event.body) //For function URL
+    event = event.body
+    if(typeof event === 'string')
+        event = JSON.parse(event) //For function URL
+    
     let pages = await fetchMarkdown(new URL(event.url), { images: event.images }, event.limit);
     if (event.tree) 
         pages = await namify(pages)
