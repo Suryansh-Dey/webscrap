@@ -2,48 +2,51 @@ import chromium from '@sparticuz/chromium'
 import puppeteer from 'puppeteer-core'
 import { scrapSites } from './scrapSites.js';
 import TurndownService from "turndown";
-const turndownService = new TurndownService();
 import { gfm } from './gfm.cjs';
-turndownService.use(gfm)
 
 /**
  * @param {string} html
- * @param {URL} url request url.
- * @param {boolean} images 
+ * @param {URL} base_url request url.
+ * @param {{images:boolean, header:boolean, footer:boolean}} options 
  * @returns {{markdown:string, references:URL[]}} markdown
  */
-function htmlToMarkdown(html, url, images = true) {
-    html = html
-        .replace(/<style[^>]*>.*?<\/style>/gis, "")
-        .replace(/<script[^>]*>.*?<\/script>/gis, "")
-        .replace(/<colgroup.*?<\/colgroup>/gis, "")
+function htmlToMarkdown(html, base_url, options) {
+    const turndownService = new TurndownService();
+    turndownService.use(gfm)
 
-    turndownService.addRule("customImage", {
-        filter: "img",
-        replacement: function(_, node) {
-            if (!images) return ' '
-            const alt = node.getAttribute("alt") || "";
-            let src = node.getAttribute("src") || "";
+    const remove = ['script', 'style', 'colgroup']
+    if (!options.images) remove.push('img')
+    if (!options.header) remove.push('header')
+    if (!options.footer) remove.push('footer')
+    turndownService.remove(remove)
 
-            src = new URL(src, url).toString();
-            return `![${alt}](${src})`;
-        },
-    });
     const references = []
-    turndownService.addRule("customLink", {
+    turndownService.addRule("absoluteLinks", {
         filter: "a",
         replacement: function(content, node) {
-            const href = new URL(node.getAttribute("href"), url);
-            if (href.origin === url.origin && isPage(href))
-                references.push(href)
+            const href = node.getAttribute("href");
+            if (!href) return ''
+            const url = new URL(href, base_url);
+            if (url.origin === base_url.origin && isPage(url))
+                references.push(url)
 
-            return `[${content}](${href})`;
+            return `[${content || url}](${url})`;
         },
     });
+    if (options.images) {
+        turndownService.addRule('absoluteImages', {
+            filter: 'img',
+            replacement: (_, node) => {
+                const src = node.getAttribute('src');
+                const absoluteSrc = new URL(src, base_url).href;
+                const alt = node.getAttribute('alt') || '';
+                return `![${alt}](${absoluteSrc})`;
+            }
+        });
+    }
 
     return {
         markdown: turndownService.turndown(html)
-            .replace(/<img[^>]*src="([^"]*)"[^>]*>/gis, (_, rawUrl) => `<img src="${new URL(rawUrl, url)}">`)
         , references
     };
 }

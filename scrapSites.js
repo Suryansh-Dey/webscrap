@@ -22,7 +22,7 @@ export async function scrapSites(url, visit, options, dataProcess, limit) {
     visited[standardise(url)] = true
     const queue = [{
         url,
-        ...dataProcess(await visit(url), url, options.images)
+        ...dataProcess(await visit(url), url, options)
     }]
     limit--
 
