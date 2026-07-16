@@ -14,10 +14,27 @@ function htmlToMarkdown(html, base_url, options) {
     const turndownService = new TurndownService();
     turndownService.use(gfm)
 
-    const remove = ['script', 'style', 'colgroup']
-    if (!options.images) remove.push('img')
+    let remove = ['script', 'style', 'colgroup', 'svg']
     if (!options.header) remove.push('header')
     if (!options.footer) remove.push('footer')
+    if (options.images) {
+        turndownService.addRule('absoluteImages', {
+            filter: 'img',
+            replacement: (_, node) => {
+                const src = node.getAttribute('src');
+                const absoluteSrc = new URL(src, base_url).href;
+                const alt = node.getAttribute('alt') || '';
+                return `![${alt}](${absoluteSrc})`;
+            }
+        });
+    } else {
+        turndownService.addRule('image', {
+            filter: ['img', 'picture'],
+            replacement: function () {
+                return '';
+            }
+        });
+    }
     turndownService.remove(remove)
 
     const references = []
@@ -33,22 +50,8 @@ function htmlToMarkdown(html, base_url, options) {
             return `[${content || url}](${url})`;
         },
     });
-    if (options.images) {
-        turndownService.addRule('absoluteImages', {
-            filter: 'img',
-            replacement: (_, node) => {
-                const src = node.getAttribute('src');
-                const absoluteSrc = new URL(src, base_url).href;
-                const alt = node.getAttribute('alt') || '';
-                return `![${alt}](${absoluteSrc})`;
-            }
-        });
-    }
 
-    return {
-        markdown: turndownService.turndown(html)
-        , references
-    };
+    return { markdown: turndownService.turndown(html), references };
 }
 /**
  * @param {URL} url 
