@@ -4,24 +4,36 @@ import { scrapSites } from './scrapSites.js';
 import TurndownService from "turndown";
 import { gfm } from './gfm.cjs';
 
+/** @typedef {{images:boolean, header:boolean, footer:boolean}} Options */
+/**
+ * @param {Options} options
+ * @returns {string} cleaned HTML
+ */
+function cleanHTML(options) {
+    let remove = ['script', 'style', 'colgroup', 'svg', 'col']
+    if (!options.header) remove.push('header')
+    if (!options.footer) remove.push('footer')
+    remove.forEach(tag => {
+        document.querySelectorAll(tag).forEach(el => el.remove());
+    });
+    return document.body.innerHTML
+}
 /**
  * @param {string} html
  * @param {URL} base_url request url.
- * @param {{images:boolean, header:boolean, footer:boolean}} options 
+ * @param {Options} options 
  * @returns {{markdown:string, references:URL[]}} markdown
  */
-function htmlToMarkdown(html, base_url, options) {
+export function htmlToMarkdown(html, base_url, options) {
     const turndownService = new TurndownService();
     turndownService.use(gfm)
 
-    let remove = ['script', 'style', 'colgroup', 'svg']
-    if (!options.header) remove.push('header')
-    if (!options.footer) remove.push('footer')
     if (options.images) {
         turndownService.addRule('absoluteImages', {
             filter: 'img',
             replacement: (_, node) => {
                 const src = node.getAttribute('src');
+                if (!src) return '';
                 const absoluteSrc = new URL(src, base_url).href;
                 const alt = node.getAttribute('alt') || '';
                 return `![${alt}](${absoluteSrc})`;
@@ -30,12 +42,9 @@ function htmlToMarkdown(html, base_url, options) {
     } else {
         turndownService.addRule('image', {
             filter: ['img', 'picture'],
-            replacement: function () {
-                return '';
-            }
+            replacement: () => ''
         });
     }
-    turndownService.remove(remove)
 
     const references = []
     turndownService.addRule("absoluteLinks", {
@@ -68,7 +77,7 @@ function sleep(ms) {
 }
 /**
  * @param {URL} url 
- * @param {import('./scrapSites.js').Options} options 
+ * @param {Options} options 
  * @param {number} [limit=1]
  * @returns {Promise<Object<string,string>>} pages
  */
@@ -102,8 +111,7 @@ export default async function fetchMarkdown(url, options, limit = 1) {
                 response.headers()['content-type'] && response.headers()['content-type'].startsWith('text/html')) {
                 console.log("Scrapping: ", url.href)
                 await sleep(5 * 1000) // Waiting for async js
-                const html = await page.evaluate(() => document.body.innerHTML);
-                data = html
+                data = await page.evaluate(cleanHTML, options);
             }
             await page.close();
             pageCount--

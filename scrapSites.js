@@ -5,16 +5,15 @@
 function standardise(url) {
     return url.href.toLowerCase().replace(/#.*/, '').replaceAll('//', '/')
 }
-/** @typedef {{images:boolean}} Options */
+/** @typedef {{images:boolean, header:boolean, footer:boolean}} Options */
 /**
  * BFS in js
  * @param {URL} url 
- * @param {(url:URL)=>Promise<string>|Promise<boolean>} visit 
+ * @param {(url:URL)=>Promise<string|boolean>} visit 
  * @param {Options} options 
  * @param {(data:string, originalURL:URL, images:boolean)=> {markdown:string, references:URL[]} dataProcess 
- * @param {(data:string)=>URL[]} getNeighbours 
  * @param {number} limit 
- * @returns {Promise<Object<string,string>>} markdownOfPages
+ * @returns {Promise<Object<string,string>>} object of url:markdown
  */
 export async function scrapSites(url, visit, options, dataProcess, limit) {
     const visited_pages = {}
