@@ -5,15 +5,15 @@
 function standardise(url) {
     return url.href.toLowerCase().replace(/#.*/, '').replaceAll('//', '/')
 }
-/** @typedef {{images:boolean, header:boolean, footer:boolean}} Options */
+/** @typedef {{images:boolean, header:boolean, footer:boolean, link_text_placeholder:boolean}} Options */
 /**
  * BFS in js
  * @param {URL} url 
  * @param {(url:URL)=>Promise<string|boolean>} visit 
  * @param {Options} options 
- * @param {(data:string, originalURL:URL, images:boolean)=> {markdown:string, references:URL[]} dataProcess 
+ * @param {(data:string, originalURL:URL, options:Options)=> {markdown:string, references:{url:URL, placeholder?:string, text?:string}[]} dataProcess 
  * @param {number} limit 
- * @returns {Promise<Object<string,string>>} object of url:markdown
+ * @returns {Promise<Object<string,string>> | Promise<Record<string, { markdown: string, placeholders: { placeholder: string, url: URL, text: string }[] }>>} object of {url:markdown}
  */
 export async function scrapSites(url, visit, options, dataProcess, limit) {
     const visited_pages = {}
@@ -25,12 +25,12 @@ export async function scrapSites(url, visit, options, dataProcess, limit) {
     }]
     limit--
 
-    while (queue.length) {
-        const childPage = queue.shift()
-        visited_pages[childPage.url] = childPage.markdown
+    let childPage
+    while (childPage = queue.shift()) {
+        visited_pages[childPage.url] = options.link_text_placeholder ? { markdown: childPage.markdown, placeholders: childPage.references } : childPage.markdown
 
         const pagePromises = []
-        for (const neighbour of childPage.references) {
+        for (const { url: neighbour } of childPage.references) {
             const standard_url = standardise(neighbour)
             if (!visited[standard_url] && limit && !standardise(url).startsWith(standard_url)) {
                 visited[standard_url] = true
@@ -40,7 +40,7 @@ export async function scrapSites(url, visit, options, dataProcess, limit) {
                         if (html)
                             queue.push({
                                 url: neighbour,
-                                ...dataProcess(html, url, options.images)
+                                ...dataProcess(html, url, options)
                             })
                     } catch (error) {
                         console.log("failed to scrap", neighbour.href, ". Error:", error)

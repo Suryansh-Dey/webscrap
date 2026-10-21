@@ -4,7 +4,9 @@ import { scrapSites } from './scrapSites.js';
 import TurndownService from "turndown";
 import { gfm } from './gfm.cjs';
 
-/** @typedef {{images:boolean, header:boolean, footer:boolean}} Options */
+let global_count = 0
+
+/** @typedef {{images:boolean, header:boolean, footer:boolean, link_text_placeholder:boolean}} Options */
 /**
  * @param {Options} options
  * @returns {string} cleaned HTML
@@ -22,7 +24,7 @@ function cleanHTML(options) {
  * @param {string} html
  * @param {URL} base_url request url.
  * @param {Options} options 
- * @returns {{markdown:string, references:URL[]}} markdown
+ * @returns {{markdown:string, references:{url:URL, placeholder?:string, text?:string}[]}} markdown
  */
 export function htmlToMarkdown(html, base_url, options) {
     const turndownService = new TurndownService();
@@ -54,7 +56,8 @@ export function htmlToMarkdown(html, base_url, options) {
             if (!href) return ''
             const url = new URL(href, base_url);
             if (url.origin === base_url.origin && isPage(url))
-                references.push(url)
+                references.push(options.link_text_placeholder ?
+                    { url, placeholder: `PLACEHOLDER_${global_count++}`, text: content } : { url })
 
             return `[${content || url}](${url})`;
         },
@@ -79,7 +82,7 @@ function sleep(ms) {
  * @param {URL} url 
  * @param {Options} options 
  * @param {number} [limit=1]
- * @returns {Promise<Object<string,string>>} pages
+ * @returns {Promise<Record<string, string>> | Promise<Record<string, { markdown: string, placeholders: { placeholder: string, url: URL, text: string }[] }>>}
  */
 export default async function fetchMarkdown(url, options, limit = 1) {
     const browser = await puppeteer.launch({
