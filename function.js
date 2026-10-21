@@ -52,29 +52,23 @@ export function htmlToMarkdown(html, base_url, options) {
     turndownService.addRule("absoluteLinks", {
         filter: "a",
         replacement: function(content, node) {
-            const href = node.getAttribute("href");
+            const href = node.getAttribute("href")
             if (!href) return ''
-            const url = new URL(href, base_url);
-            if (url.origin === base_url.origin && isPage(url))
-                references.push(options.link_text_placeholder ?
-                    { url, placeholder: `PLACEHOLDER_${global_count++}`, text: content } : { url })
+            const url = new URL(href, base_url)
+            if (!options.link_text_placeholder) {
+                references.push({ url })
+                return `[${content || url}](${url})`
+            }
+            const placeholder = `PLACEHOLDER_${global_count++};`
+            references.push(
+                { url, placeholder, text: content })
+            return `[${placeholder}](${url})`
 
-            return `[${content || url}](${url})`;
         },
     });
 
     return { markdown: turndownService.turndown(html), references };
 }
-/**
- * @param {URL} url 
- * @returns {boolean}
- */
-function isPage(url) {
-    const parts = url.pathname.split('.');
-    const extention = parts[parts.length - 1]
-    return parts.length === 1 || extention.includes('/') || extention === 'html' || extention === 'aspx'
-}
-
 function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms))
 }

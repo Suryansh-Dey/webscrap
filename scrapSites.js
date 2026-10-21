@@ -5,23 +5,32 @@
 function standardise(url) {
     return url.href.toLowerCase().replace(/#.*/, '').replaceAll('//', '/')
 }
+/**
+ * @param {URL} url
+ * @returns {boolean}
+ */
+function isPage(url) {
+    const parts = url.pathname.split('.');
+    const extention = parts[parts.length - 1]
+    return parts.length === 1 || extention.includes('/') || extention === 'html' || extention === 'aspx'
+}
 /** @typedef {{images:boolean, header:boolean, footer:boolean, link_text_placeholder:boolean}} Options */
 /**
  * BFS in js
- * @param {URL} url 
+ * @param {URL} base_url 
  * @param {(url:URL)=>Promise<string|boolean>} visit 
  * @param {Options} options 
  * @param {(data:string, originalURL:URL, options:Options)=> {markdown:string, references:{url:URL, placeholder?:string, text?:string}[]} dataProcess 
  * @param {number} limit 
  * @returns {Promise<Object<string,string>> | Promise<Record<string, { markdown: string, placeholders: { placeholder: string, url: URL, text: string }[] }>>} object of {url:markdown}
  */
-export async function scrapSites(url, visit, options, dataProcess, limit) {
+export async function scrapSites(base_url, visit, options, dataProcess, limit) {
     const visited_pages = {}
     const visited = {}
-    visited[standardise(url)] = true
+    visited[standardise(base_url)] = true
     const queue = [{
-        url,
-        ...dataProcess(await visit(url), url, options)
+        url: base_url,
+        ...dataProcess(await visit(base_url), base_url, options)
     }]
     limit--
 
@@ -32,7 +41,7 @@ export async function scrapSites(url, visit, options, dataProcess, limit) {
         const pagePromises = []
         for (const { url: neighbour } of childPage.references) {
             const standard_url = standardise(neighbour)
-            if (!visited[standard_url] && limit && !standardise(url).startsWith(standard_url)) {
+            if (!visited[standard_url] && limit && !standardise(base_url).startsWith(standard_url) && base_url.origin === neighbour.origin && isPage(neighbour)) {
                 visited[standard_url] = true
                 pagePromises.push((async () => {
                     try {
@@ -40,7 +49,7 @@ export async function scrapSites(url, visit, options, dataProcess, limit) {
                         if (html)
                             queue.push({
                                 url: neighbour,
-                                ...dataProcess(html, url, options)
+                                ...dataProcess(html, neighbour, options)
                             })
                     } catch (error) {
                         console.log("failed to scrap", neighbour.href, ". Error:", error)
