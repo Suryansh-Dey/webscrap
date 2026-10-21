@@ -54,7 +54,12 @@ export function htmlToMarkdown(html, base_url, options) {
         replacement: function(content, node) {
             const href = node.getAttribute("href")
             if (!href) return ''
-            const url = new URL(href, base_url)
+            let url
+            try {
+                url = new URL(href, base_url)
+            } catch {
+                return '' // Malformed href
+            }
             if (!options.link_text_placeholder) {
                 references.push({ url })
                 return `[${content || url}](${url})`
