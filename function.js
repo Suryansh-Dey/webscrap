@@ -81,10 +81,12 @@ function sleep(ms) {
 }
 async function launchBrowser() {
     return puppeteer.launch({
-        args: chromium.args,
-        defaultViewport: chromium.defaultViewport,
+        args: await puppeteer.defaultArgs({ args: chromium.args, headless: 'shell' }),
+        defaultViewport: {
+            deviceScaleFactor: 1, hasTouch: false, height: 1080, isLandscape: true, isMobile: false, width: 1920,
+        },
         executablePath: await chromium.executablePath(),
-        headless: chromium.headless,
+        headless: 'shell',
     });
 }
 /**
